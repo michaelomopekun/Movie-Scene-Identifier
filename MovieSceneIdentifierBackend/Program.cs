@@ -1,3 +1,4 @@
+using CloudinaryDotNet;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,6 +21,19 @@ var connectionString = $"Server={Environment.GetEnvironmentVariable("POSTGRES_HO
 builder.Services.AddDbContext<MovieIdentifierDbContext>(options =>
     options.UseNpgsql(connectionString,
         x => x.MigrationsAssembly(typeof(MovieIdentifierDbContext).Assembly.FullName)));
+
+
+// configure cloudinary
+builder.Services.AddSingleton(serviceProvider =>
+{
+    var account = new Account(
+        Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME"),
+        Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY"),
+        Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET"));
+
+    return new Cloudinary(account);
+});
+
 
 var app = builder.Build();
 
