@@ -36,7 +36,7 @@ public class UploadClipService : IUploadClipService
 
     public async Task<UploadedClip> UploadClipAsync(IFormFile ClipFile)
     {
-        await using var stream = ClipFile.OpenReadStream();
+e        await using var stream = ClipFile.OpenReadStream();
 
         var uploadParams = new VideoUploadParams()
         {

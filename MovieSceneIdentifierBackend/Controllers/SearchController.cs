@@ -21,8 +21,14 @@ public class SearchController : ControllerBase
 
     [HttpPost]
     [Route("SearchMovie")]
-    public async Task<IActionResult> SearchMovie([FromBody] IFormFile VideoClip, int Top_K)
+    public async Task<IActionResult> SearchMovie([FromForm] UploadMovieRequest request)
     {
+        var VideoClip = request.VideoClip;
+        var Top_K = request.Top_K;
+
+        _logger.LogInformation("Video clip: {VideoClip}, Top_K: {Top_K}", VideoClip, Top_K);
+
+    
 
         if (VideoClip == null)
         {
@@ -43,16 +49,15 @@ public class SearchController : ControllerBase
             // fetch movie previous identifed to the filepath 
         }
 
-        var url = await _uploadClipService.UploadClipAsync(VideoClip);
+        var url = _uploadClipService.UploadClipAsync(VideoClip);
         if (url == null)
         {
             _logger.LogError("cloudinary url shouldnt be null");
-            return BadRequest(new { StatusCode = 99, Status = "Error", Error = "cloudinary url shouldnt be null" });
         }
 
-        var searchResult = await _sceneIdentifierService.FetchMatchedMovieWithScene(VideoClip, url, Top_K);
+        var searchResult = await _sceneIdentifierService.FetchMatchedMovieWithScene(VideoClip, Top_K);
 
 
-        return Ok(new { StatusCode = 100, Status = "Success", Data = new { /* search results */ } });
+        return Ok(new { StatusCode = 100, Status = "Success", Data = new {searchResult} });
     }
 }

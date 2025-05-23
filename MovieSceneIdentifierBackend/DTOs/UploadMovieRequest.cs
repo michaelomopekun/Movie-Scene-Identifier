@@ -1,14 +1,17 @@
 using System.ComponentModel.DataAnnotations;
+using Swashbuckle.AspNetCore.Annotations;
 
 public class UploadMovieRequest
 {
-    [Required]
+    [Required(ErrorMessage = "Video clip is required.")]
     [DataType(DataType.Upload)]
-    [Display(Name = "Clip File")]
-    [FileExtensions(Extensions = "mp4,mkv", ErrorMessage = "Please upload a valid video file.")]
-    [FileSize(20 * 1024 * 1024, 50 * 1024 * 1024, ErrorMessage = "File size must be greater than 20 MB and less than 50 MB.")]
-    [RegularExpression(@"^.*\.(mp4|mkv)$", ErrorMessage = "File type is not supported.")]
+    [Display(Name = "VideoClip")]
+    // [FileExtensions(Extensions = ".mp4", ErrorMessage = "Please upload a valid video file.")]
+    [FileSize(1 * 1024 * 1024, 50 * 1024 * 1024, ErrorMessage = "File size must be greater than 1 MB and less than 50 MB.")]
     [DisplayFormat(ConvertEmptyStringToNull = true)]
-    public IFormFile ClipFile { get; set; } = null!;
+    [SwaggerSchema(Format = "binary")]
+    public IFormFile VideoClip { get; set; } = null!;
+
+    public int Top_K { get; set; } = 3;
 
 }

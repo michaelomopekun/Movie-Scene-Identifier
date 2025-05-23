@@ -16,7 +16,7 @@ public class SceneIdentifierService : ISceneIdentifierService
     }
 
 
-    public async Task<IEnumerable<MovieIdentified>> FetchMatchedMovieWithScene(IFormFile ClipFile, string url, int topK)
+    public async Task<IEnumerable<MovieIdentified>> FetchMatchedMovieWithScene(IFormFile ClipFile, int topK)
     {
         using var content = new MultipartFormDataContent();
 
@@ -27,6 +27,8 @@ public class SceneIdentifierService : ISceneIdentifierService
         streamContent.Headers.ContentType = new MediaTypeHeaderValue(ClipFile.ContentType);
 
         content.Add(streamContent, "file", ClipFile.FileName);
+
+        content.Add(new StringContent(topK.ToString()), "top_k");
 
         try
         {
