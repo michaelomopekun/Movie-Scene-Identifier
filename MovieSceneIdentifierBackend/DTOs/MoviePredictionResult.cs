@@ -13,3 +13,11 @@ public class MoviePredictionResult
     public string Rating { get; set; } = string.Empty;
 
 }
+
+
+public class PythonServiceResponse
+{
+    public string id { get; set; } = string.Empty;
+    public string document { get; set; } = string.Empty;
+    public float distance { get; set; } = 0f;
+}

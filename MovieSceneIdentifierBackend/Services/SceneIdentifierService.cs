@@ -20,9 +20,15 @@ public class SceneIdentifierService : ISceneIdentifierService
     {
         using var content = new MultipartFormDataContent();
 
-        await using var stream = ClipFile.OpenReadStream();
+        await using var sourceStream = ClipFile.OpenReadStream();
 
-        var streamContent = new StreamContent(stream);
+        using var memoryStream = new MemoryStream();
+
+        await sourceStream.CopyToAsync(memoryStream);
+
+        memoryStream.Position = 0;
+
+        var streamContent = new StreamContent(memoryStream);
 
         streamContent.Headers.ContentType = new MediaTypeHeaderValue(ClipFile.ContentType);
 
@@ -38,7 +44,21 @@ public class SceneIdentifierService : ISceneIdentifierService
 
             var json = await response.Content.ReadAsStringAsync();
 
-            return JsonSerializer.Deserialize<List<MovieIdentified>>(json) ?? new();
+            var predictions = JsonSerializer.Deserialize<List<PythonServiceResponse>>(json) ?? new();
+
+            var movieSearchResults = predictions.Select(result => new MovieIdentified
+            {
+                ImdbId = result.id,
+                SimilarityScore = 100 - (result.distance * 100),
+                MetadataPayload = JsonSerializer.Serialize(new
+                {
+                    imdbId = result.id,
+                    document = result.document,
+                    similarityScore = 1 - result.distance
+                })
+            }).ToList();
+
+            return movieSearchResults;
         }
         catch (Exception ex)
         {
