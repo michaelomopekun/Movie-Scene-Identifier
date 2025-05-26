@@ -11,4 +11,6 @@ public class UploadedClip
     public long FileSize { get; set; } = 0;
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+    public string MovieIdentifiedId { get; set; } = string.Empty;
+    public MovieIdentified MovieIdentified { get; set; } = null!;
 }

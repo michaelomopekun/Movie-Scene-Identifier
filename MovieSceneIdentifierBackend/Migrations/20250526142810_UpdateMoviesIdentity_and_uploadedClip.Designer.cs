@@ -11,8 +11,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MovieSceneIdentifierBackend.Migrations
 {
     [DbContext(typeof(MovieIdentifierDbContext))]
-    [Migration("20250523225317_UpdateMoviesIdentity_entity_added_column_for_cloudinary")]
-    partial class UpdateMoviesIdentity_entity_added_column_for_cloudinary
+    [Migration("20250526142810_UpdateMoviesIdentity_and_uploadedClip")]
+    partial class UpdateMoviesIdentity_and_uploadedClip
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -28,24 +28,70 @@ namespace MovieSceneIdentifierBackend.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("text");
 
+                    b.Property<string>("Actors")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<float>("Confidence")
+                        .HasColumnType("real");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Director")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Genre")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("ImdbId")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("MetadataPayload")
+                    b.Property<string>("Language")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<float>("SimilarityScore")
-                        .HasColumnType("real");
+                    b.Property<string>("Plot")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Poster")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Released")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Runtime")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("UploadedClipId")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.HasKey("Id");
+                    b.Property<string>("Year")
+                        .IsRequired()
+                        .HasColumnType("text");
 
-                    b.HasIndex("UploadedClipId");
+                    b.Property<string>("imdbRating")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
 
                     b.ToTable("MoviesIdentified");
                 });
@@ -89,23 +135,34 @@ namespace MovieSceneIdentifierBackend.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("MovieIdentifiedId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("MovieIdentifiedId");
+
                     b.ToTable("UploadedClips");
+                });
+
+            modelBuilder.Entity("UploadedClip", b =>
+                {
+                    b.HasOne("MovieIdentified", "MovieIdentified")
+                        .WithMany("UploadedClips")
+                        .HasForeignKey("MovieIdentifiedId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("MovieIdentified");
                 });
 
             modelBuilder.Entity("MovieIdentified", b =>
                 {
-                    b.HasOne("UploadedClip", "UploadedClip")
-                        .WithMany()
-                        .HasForeignKey("UploadedClipId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("UploadedClip");
+                    b.Navigation("UploadedClips");
                 });
 #pragma warning restore 612, 618
         }

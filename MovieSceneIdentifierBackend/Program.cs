@@ -52,6 +52,7 @@ builder.Services.AddSingleton(serviceProvider =>
 builder.Services.AddScoped<ISceneIdentifierService, SceneIdentifierService>();
 builder.Services.AddScoped<IUploadClipService, UploadClipService>();
 builder.Services.AddScoped<IUploadedClipRepository, UploadedClipRepository>();
+builder.Services.AddScoped<IMovieIdentifiedRepository, MovieIdentifiedRepository>();
 
 
 builder.Services.AddHttpClient<ISceneIdentifierService, SceneIdentifierService>(client =>

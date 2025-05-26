@@ -28,7 +28,6 @@ public class SearchController : ControllerBase
 
         _logger.LogInformation("Video clip: {VideoClip}, Top_K: {Top_K}", VideoClip, Top_K);
 
-    
 
         if (VideoClip == null)
         {
@@ -46,18 +45,28 @@ public class SearchController : ControllerBase
         var clipExists = await _uploadClipService.GetClipByFileNameAsync(VideoClip.FileName);
         if(clipExists != null)
         {
-            // fetch movie previous identifed to the filepath 
+            var movieIdentified = await _sceneIdentifierService.GetMovieIdentifiedByFileNameAsync(VideoClip.FileName, Top_K);
+            if (movieIdentified != null)
+            {
+                _logger.LogInformation("Movie already identified: {MovieIdentified}", movieIdentified);
+
+                return Ok(new { StatusCode = 100, Status = "Success", Data = new { movieIdentified } });
+            }
+            else
+            {
+                _logger.LogWarning("Clip exists but no movie identified found for file: {FileName}", VideoClip.FileName);
+            }
         }
 
-        var url = _uploadClipService.UploadClipAsync(VideoClip);
+        var searchResult = await _sceneIdentifierService.FetchMatchedMovieWithScene(VideoClip, Top_K);
+
+        var url = await _uploadClipService.UploadClipAsync(VideoClip, searchResult);
         if (url == null)
         {
             _logger.LogError("cloudinary url shouldnt be null");
         }
 
-        var searchResult = await _sceneIdentifierService.FetchMatchedMovieWithScene(VideoClip, Top_K);
 
-
-        return Ok(new { StatusCode = 100, Status = "Success", Data = new {searchResult} });
+        return Ok(new { StatusCode = 100, Status = "Success", Data = new { searchResult } });
     }
 }

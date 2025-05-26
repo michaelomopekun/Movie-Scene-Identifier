@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 public class MovieIdentifierDbContext : DbContext
 {
 
-    public MovieIdentifierDbContext(DbContextOptions<MovieIdentifierDbContext> options) : base(options){ }
+    public MovieIdentifierDbContext(DbContextOptions<MovieIdentifierDbContext> options) : base(options) { }
 
     public DbSet<UploadedClip>? UploadedClips { get; set; }
     public DbSet<MovieIdentified>? MoviesIdentified { get; set; }
@@ -18,9 +18,21 @@ public class MovieIdentifierDbContext : DbContext
 
 
         modelBuilder.Entity<UploadedClip>(entity =>
-        { });
+        {
+            entity.HasOne(d => d.MovieIdentified)
+                .WithMany(p => p.UploadedClips)
+                .HasForeignKey(d => d.MovieIdentifiedId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        
         modelBuilder.Entity<MovieIdentified>(entity =>
-        { });
+        {
+            entity.HasMany(d => d.UploadedClips)
+                .WithOne(p => p.MovieIdentified)
+                .HasForeignKey(d => d.MovieIdentifiedId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
     }
 
 }

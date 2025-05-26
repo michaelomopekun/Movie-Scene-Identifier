@@ -34,7 +34,7 @@ public class UploadClipService : IUploadClipService
     //     throw new NotImplementedException();
     // }
 
-    public async Task<UploadedClip> UploadClipAsync(IFormFile ClipFile)
+    public async Task<IEnumerable<UploadedClip>> UploadClipAsync(IFormFile ClipFile, IEnumerable<MoviePredictionResult> MovieIdentifieds)
     {
         await using var stream = ClipFile.OpenReadStream();
 
@@ -48,24 +48,33 @@ public class UploadClipService : IUploadClipService
 
         var pathUrl = uploadResult.SecureUrl.AbsoluteUri;
 
-        var uploadedClip = new UploadedClip
+        var movieIdentified = new List<UploadedClip>();
+
+        foreach (var movie in MovieIdentifieds)
         {
+            var uploadedClip = new UploadedClip
+            {
 
-            Id = await Nanoid.Nanoid.GenerateAsync(Idcharacters, size),
-            FileName = ClipFile.FileName,
-            FileSize = ClipFile.Length,
-            FileType = ClipFile.ContentType,
-            CloudinaryFileName = uploadResult.DisplayName,
-            CloudinaryFilePath = pathUrl,
-            CloudinaryFileType = uploadResult.Format,
-            CloudinaryFileSize = uploadResult.Bytes.ToString(),
-            CloudinaryPublicId = uploadResult.PublicId,
-            CreatedAt = DateTime.UtcNow,
+                Id = await Nanoid.Nanoid.GenerateAsync(Idcharacters, size),
+                FileName = ClipFile.FileName,
+                FileSize = ClipFile.Length,
+                FileType = ClipFile.ContentType,
+                CloudinaryFileName = uploadResult.DisplayName,
+                CloudinaryFilePath = pathUrl,
+                CloudinaryFileType = uploadResult.Format,
+                CloudinaryFileSize = uploadResult.Bytes.ToString(),
+                CloudinaryPublicId = uploadResult.PublicId,
+                CreatedAt = DateTime.UtcNow,
+                MovieIdentifiedId = movie.MovieIdentifiedId,
 
-        };
+            };
 
-        await _uploadedClipRepository.InsertUploadedClipAsync(uploadedClip);
+            
+            await _uploadedClipRepository.InsertUploadedClipAsync(uploadedClip);
 
-        return uploadedClip;
+            movieIdentified.Add(uploadedClip);
+        }
+
+        return movieIdentified;
     }
 }
