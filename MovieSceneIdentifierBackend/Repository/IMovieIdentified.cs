@@ -4,5 +4,6 @@ public interface IMovieIdentifiedRepository
     Task<IEnumerable<MovieIdentified>> GetAllMoviesIdentifiedAsync(int pageSize = 100, int pageNumber = 1);
     Task<MovieIdentified> InsertMovieIdentifiedAsync(MovieIdentified movieIdentified);
     Task<MovieIdentified?> UpdateMovieIdentifiedAsync(MovieIdentified movieIdentified);
+    Task<int?> GetMovieIdentifiedCountByFileNameAsync(string filename);
     // Task<bool> DeleteMovieIdentifiedAsync(string id);
 }

@@ -8,6 +8,7 @@ public class SceneIdentifierService : ISceneIdentifierService
     private readonly HttpClient _httpClient;
     private readonly ILogger<SceneIdentifierService> _logger;
     private readonly IMovieIdentifiedRepository _movieIdentifiedRepository;
+    private readonly IUploadedClipRepository _uploadedClipRepository;
     private const int size = 12;
     private const string Idcharacters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-/<>=!@#$%&/()[]{}|";
     private string MovieMatchServiceURL = "http://127.0.0.1:5000/search";
@@ -51,7 +52,7 @@ public class SceneIdentifierService : ISceneIdentifierService
 
             var json = await response.Content.ReadAsStringAsync();
 
-            var detailedMovieSearchResult = await FetchMatchedMovieInfo(json);
+            var detailedMovieSearchResult = await FetchMatchedMovieInfo(json, ClipFile);
 
             return detailedMovieSearchResult;
         }
@@ -64,7 +65,7 @@ public class SceneIdentifierService : ISceneIdentifierService
     }
 
 
-    public async Task<IEnumerable<MoviePredictionResult>> FetchMatchedMovieInfo(string matchedResultPayload)
+    public async Task<IEnumerable<MoviePredictionResult>> FetchMatchedMovieInfo(string matchedResultPayload, IFormFile ClipFile)
     {
 
         try
@@ -107,7 +108,15 @@ public class SceneIdentifierService : ISceneIdentifierService
 
                 results.Add(movieInfo);
 
-                var inserted = await InsertMovieIdentifiedAsync(movieInfo, Nanoid.Nanoid.Generate(Idcharacters, size));
+                var moviePredictedId = Nanoid.Nanoid.Generate(Idcharacters, size);
+
+                var UploadedClipCheck = await _uploadedClipRepository.GetClipWithFileNameAsync(ClipFile.FileName);
+                if (UploadedClipCheck != null)
+                {
+                    moviePredictedId = UploadedClipCheck.MovieIdentifiedId;
+                }
+
+                var inserted = await InsertMovieIdentifiedAsync(movieInfo, moviePredictedId);
 
                 movieInfo.MovieIdentifiedId = inserted.Id;
 
@@ -220,5 +229,10 @@ public class SceneIdentifierService : ISceneIdentifierService
             _logger.LogInformation("Retrieved movie identified for filename: {Filename}", filename);
 
         return movies;
+    }
+
+    public Task<int?> GetMoviesIdentifiedCountAsync(string filename)
+    {
+        return _movieIdentifiedRepository.GetMovieIdentifiedCountByFileNameAsync(filename);
     }
 }

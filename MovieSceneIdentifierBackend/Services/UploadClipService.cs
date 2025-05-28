@@ -1,4 +1,3 @@
-
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 

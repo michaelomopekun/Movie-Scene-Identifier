@@ -44,11 +44,6 @@ public class MovieIdentifiedRepository : IMovieIdentifiedRepository
 
     public async Task<IEnumerable<MovieIdentified?>> GetMovieIdentifiedByFileNameAsync(string filename, int top_k = 1)
     {
-        var count = await GetMovieIdentifiedCountByFileNameAsync(filename);
-        if (top_k > count)
-        {
-            return null!;
-        }
 
         var uploadedClip = await _context.UploadedClips
             .AsNoTracking()
