@@ -28,12 +28,8 @@ The project consists of the following main components:
 
 ## Usage Guidelines
 - Use the `MovieScenesController` to perform CRUD operations on movie scenes.
-- The API supports the following endpoints:
-  - `GET /api/moviescenes`: Retrieve a list of movie scenes.
-  - `GET /api/moviescenes/{id}`: Retrieve a specific movie scene by ID.
-  - `POST /api/moviescenes`: Create a new movie scene.
-  - `PUT /api/moviescenes/{id}`: Update an existing movie scene.
-  - `DELETE /api/moviescenes/{id}`: Delete a movie scene.
+- The API supports this endpoint:
+  - `GET /api/Search`: Retrieve a list of movie that matches the uploaded movie scene.
 
 ## Contributing
 Contributions are welcome! Please submit a pull request or open an issue for any enhancements or bug fixes.
