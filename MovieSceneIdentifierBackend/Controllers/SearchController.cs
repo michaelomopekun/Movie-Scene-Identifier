@@ -1,3 +1,4 @@
+using CloudinaryDotNet;
 using Microsoft.AspNetCore.Mvc;
 
 
@@ -44,9 +45,9 @@ public class SearchController : ControllerBase
         // check if filename exist before calling Search endpoint
         var clipExists = await _uploadClipService.GetClipByFileNameAsync(VideoClip.FileName);
 
-        var matchedMoviesCount = await _sceneIdentifierService.GetMoviesIdentifiedCountAsync(VideoClip.FileName);
+        var matchedMoviesCount = await _sceneIdentifierService.GetMoviesIdentifiedCountAsync(VideoClip.FileName) ?? 0;
 
-        if (clipExists != null && Top_K >= matchedMoviesCount)
+        if (clipExists != null &&  matchedMoviesCount>=Top_K )
         {
             var movieIdentified = await _sceneIdentifierService.GetMovieIdentifiedByFileNameAsync(VideoClip.FileName, Top_K);
             if (movieIdentified != null)
@@ -57,6 +58,7 @@ public class SearchController : ControllerBase
             }
             else
             {
+
                 _logger.LogWarning("Clip exists but no movie identified found for file: {FileName}", VideoClip.FileName);
             }
         }
@@ -65,12 +67,26 @@ public class SearchController : ControllerBase
 
         var searchResult = await _sceneIdentifierService.FetchMatchedMovieWithScene(VideoClip, Top_K);
 
-        var url = await _uploadClipService.UploadClipAsync(VideoClip, searchResult);
-        if (url == null)
+        // var Clip = new UploadedClip();
+
+        if (clipExists == null)
         {
-            _logger.LogError("cloudinary url shouldnt be null");
+            var Clip = await _uploadClipService.UploadClipAsync(VideoClip, searchResult);
+
+            if (Clip == null)
+            {
+                _logger.LogError("unabke to save entity clip in db");
+            }
         }
 
+        // if(Clip != null)
+        //     foreach (var result in searchResult)
+        //         {
+        //             foreach (var clip in Clip)
+        //             {
+        //                 await _sceneIdentifierService.InsertMovieIdentifiedAsync(result, result.MovieIdentifiedId, clip.Id);
+        //             }
+        //         }
 
         return Ok(new { StatusCode = 100, Status = "Success", Data = new { searchResult } });
     }

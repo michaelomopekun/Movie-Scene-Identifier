@@ -16,11 +16,12 @@ public class SceneIdentifierService : ISceneIdentifierService
 
 
 
-    public SceneIdentifierService(HttpClient httpClient, ILogger<SceneIdentifierService> logger, IMovieIdentifiedRepository movieIdentifiedRepository)
+    public SceneIdentifierService(HttpClient httpClient, ILogger<SceneIdentifierService> logger, IMovieIdentifiedRepository movieIdentifiedRepository, IUploadedClipRepository uploadedClipRepository)
     {
         _httpClient = httpClient;
         _logger = logger;
         _movieIdentifiedRepository = movieIdentifiedRepository;
+        _uploadedClipRepository = uploadedClipRepository;
     }
 
 
@@ -68,20 +69,33 @@ public class SceneIdentifierService : ISceneIdentifierService
     public async Task<IEnumerable<MoviePredictionResult>> FetchMatchedMovieInfo(string matchedResultPayload, IFormFile ClipFile)
     {
 
-        try
+        if (ClipFile == null)
         {
-            var predictions = JsonSerializer.Deserialize<List<PythonServiceResponse>>(matchedResultPayload) ?? new();
+            return null!;
+        }
 
-            var movieIds = predictions.Select(p => p.id).ToList();
+        if (string.IsNullOrEmpty(matchedResultPayload))
+        {
+            return null!;
+        }
 
-            if (movieIds.Count == 0)
-                return Enumerable.Empty<MoviePredictionResult>();
+        try
+            {
+                var predictions = JsonSerializer.Deserialize<List<PythonServiceResponse>>(matchedResultPayload) ?? new();
 
-            var fetchTasks = movieIds.Select(id => FetchMovieDetailsFromOMDB(id)).ToList();
+                var movieIds = predictions.Select(p => p.id).ToList();
 
-            await Task.WhenAll(fetchTasks);
+                if (movieIds.Count == 0)
+                    return Enumerable.Empty<MoviePredictionResult>();
 
-            var results = new List<MoviePredictionResult>();
+                var fetchTasks = movieIds.Select(id => FetchMovieDetailsFromOMDB(id)).ToList();
+
+                await Task.WhenAll(fetchTasks);
+
+                var movieIdentifiedId = Nanoid.Nanoid.Generate(Idcharacters, size);
+
+                var results = new List<MoviePredictionResult>();
+
 
             for (int i = 0; i < movieIds.Count; i++)
             {
@@ -106,32 +120,27 @@ public class SceneIdentifierService : ISceneIdentifierService
 
                 movieInfo.Confidence = similarity * 100;
 
+                movieInfo.MovieIdentifiedId = movieIdentifiedId;
+
                 results.Add(movieInfo);
 
-                var moviePredictedId = Nanoid.Nanoid.Generate(Idcharacters, size);
 
-                var UploadedClipCheck = await _uploadedClipRepository.GetClipWithFileNameAsync(ClipFile.FileName);
-                if (UploadedClipCheck != null)
-                {
-                    moviePredictedId = UploadedClipCheck.MovieIdentifiedId;
-                }
+                // var inserted = await InsertMovieIdentifiedAsync(movieInfo, moviePredictedId, UploadedClipExistCheck.Id);
 
-                var inserted = await InsertMovieIdentifiedAsync(movieInfo, moviePredictedId);
+                // movieInfo.MovieIdentifiedId = inserted.Id;
 
-                movieInfo.MovieIdentifiedId = inserted.Id;
-
-                _logger.LogInformation("Inserted movie identified with ID: {Id} for IMDB ID: {ImdbId}", inserted.Id, imdbId);
+                // _logger.LogInformation("Inserted movie identified with ID: {Id} for IMDB ID: {ImdbId}", inserted.Id, imdbId);
             }
 
-            return results;
+                return results;
 
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to parse matched result omdb payload");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to parse matched result omdb payload");
 
-            throw;
-        }
+                throw;
+            }
 
         throw new NotImplementedException();
     }
@@ -161,28 +170,42 @@ public class SceneIdentifierService : ISceneIdentifierService
         }
     }
 
-    public async Task<MovieIdentified> InsertMovieIdentifiedAsync(MoviePredictionResult movieInfo, string moviePredictedId)
+    public async Task<MovieIdentified> InsertMovieIdentifiedAsync(IEnumerable<MoviePredictionResult> MovieInfo, string moviePredictedId, string uploadedClipId)
     {
+        var listMovieInfo = new List<MovieIdentifiedPayload>();
+
+
+        foreach (var movieInfo in MovieInfo)
+        {
+            var moviePayload = new MovieIdentifiedPayload
+            {
+                ImdbId = movieInfo.ImdbId,
+                Confidence = movieInfo.Confidence,
+                Title = movieInfo.Title,
+                Released = movieInfo.Year,
+                Genre = movieInfo.Genre,
+                Director = movieInfo.Director,
+                Actors = movieInfo.Actors,
+                Plot = movieInfo.Plot,
+                Language = movieInfo.Language,
+                Country = movieInfo.Country,
+                Poster = movieInfo.Poster,
+                imdbRating = movieInfo.imdbRating,
+                Type = movieInfo.Type,
+                Runtime = movieInfo.Runtime,
+                Year = movieInfo.Year
+
+            };
+
+            listMovieInfo.Add(moviePayload);
+        }
+
+
         var movieSearchResults = new MovieIdentified
         {
             Id = moviePredictedId,
-            ImdbId = movieInfo.ImdbId,
-            Confidence = movieInfo.Confidence,
-            Title = movieInfo.Title,
-            Released = movieInfo.Year,
-            Genre = movieInfo.Genre,
-            Director = movieInfo.Director,
-            Actors = movieInfo.Actors,
-            Plot = movieInfo.Plot,
-            Language = movieInfo.Language,
-            Country = movieInfo.Country,
-            Poster = movieInfo.Poster,
-            imdbRating = movieInfo.imdbRating,
-            Type = movieInfo.Type,
-            UploadedClipId = string.Empty,
-            Runtime = movieInfo.Runtime,
-            Year = movieInfo.Year
-
+            UploadedClipId = uploadedClipId,
+            Payload = JsonSerializer.Serialize<List<MovieIdentifiedPayload>>(listMovieInfo)
         };
 
         await _movieIdentifiedRepository.InsertMovieIdentifiedAsync(movieSearchResults);
@@ -203,28 +226,33 @@ public class SceneIdentifierService : ISceneIdentifierService
 
         foreach (var movie in movieIdentified)
         {
-
-            var moviePredictionResult = new MoviePredictionResult
+            if (!string.IsNullOrEmpty(movie.Payload))
             {
-                ImdbId = movie.ImdbId,
-                Title = movie.Title,
-                Confidence = movie.Confidence,
-                Year = movie.Year,
-                Released = movie.Released,
-                Runtime = movie.Runtime,
-                Genre = movie.Genre,
-                Director = movie.Director,
-                Actors = movie.Actors,
-                Plot = movie.Plot,
-                Language = movie.Language,
-                Country = movie.Country,
-                Poster = movie.Poster,
-                imdbRating = movie.imdbRating,
-                Type = movie.Type,
-                MovieIdentifiedId = movie.Id
-            };
+                var deserialized = JsonSerializer.Deserialize<MovieIdentifiedPayload>(movie.Payload);
 
-            movies.Add(moviePredictionResult);
+
+                var moviePredictionResult = new MoviePredictionResult
+                {
+                    ImdbId = deserialized.ImdbId,
+                    Title = deserialized.Title,
+                    Confidence = deserialized.Confidence,
+                    Year = deserialized.Year,
+                    Released = deserialized.Released,
+                    Runtime = deserialized.Runtime,
+                    Genre = deserialized.Genre,
+                    Director = deserialized.Director,
+                    Actors = deserialized.Actors,
+                    Plot = deserialized.Plot,
+                    Language = deserialized.Language,
+                    Country = deserialized.Country,
+                    Poster = deserialized.Poster,
+                    imdbRating = deserialized.imdbRating,
+                    Type = deserialized.Type,
+                    MovieIdentifiedId = movie.Id
+                };
+
+                movies.Add(moviePredictionResult);
+            }
         }
             _logger.LogInformation("Retrieved movie identified for filename: {Filename}", filename);
 

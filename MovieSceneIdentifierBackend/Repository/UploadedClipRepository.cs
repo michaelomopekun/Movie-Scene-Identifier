@@ -23,12 +23,8 @@ public class UploadedClipRepository : IUploadedClipRepository
         var filePath = await _context.UploadedClips
             .AsNoTracking()
             .Where(f => f.FileName == FileName)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync() ?? null;
 
-        if (filePath == null)
-        {
-            return null;
-        }
 
         return filePath;
     }

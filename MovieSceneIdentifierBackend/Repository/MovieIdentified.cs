@@ -90,9 +90,16 @@ public class MovieIdentifiedRepository : IMovieIdentifiedRepository
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.FileName == filename);
 
+        if (uploaded_clips == null)
+        {
+            return null;
+        }
+
+        var movieIdentified = uploaded_clips.MovieIdentifiedId ?? ""; 
+
         var movieIdentifiedCount = await _context.MoviesIdentified
             .AsNoTracking()
-            .Where(m => m.Id == uploaded_clips.MovieIdentifiedId)
+            .Where(m => m.Id == movieIdentified)
             .CountAsync();
 
         return movieIdentifiedCount;

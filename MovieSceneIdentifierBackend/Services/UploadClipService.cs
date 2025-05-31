@@ -1,18 +1,21 @@
+using System.Text.Json;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 
 public class UploadClipService : IUploadClipService
 {
     private readonly IUploadedClipRepository _uploadedClipRepository;
+    private readonly IMovieIdentifiedRepository _movieIdentifiedRepository;
     private readonly Cloudinary _cloudinary;
     private const int size = 12;
     private const string Idcharacters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-/<>=!@#$%&/()[]{}|";
 
 
-    public UploadClipService(IUploadedClipRepository uploadedClipRepository, Cloudinary cloudinary)
+    public UploadClipService(IUploadedClipRepository uploadedClipRepository, Cloudinary cloudinary, IMovieIdentifiedRepository movieIdentifiedRepository)
     {
         _uploadedClipRepository = uploadedClipRepository;
         _cloudinary = cloudinary;
+        _movieIdentifiedRepository = movieIdentifiedRepository;
     }
 
 
@@ -33,7 +36,7 @@ public class UploadClipService : IUploadClipService
     //     throw new NotImplementedException();
     // }
 
-    public async Task<IEnumerable<UploadedClip>> UploadClipAsync(IFormFile ClipFile, IEnumerable<MoviePredictionResult> MovieIdentifieds)
+    public async Task<UploadedClip> UploadClipAsync(IFormFile ClipFile, IEnumerable<MoviePredictionResult> MovieIdentifieds)
     {
         await using var stream = ClipFile.OpenReadStream();
 
@@ -47,33 +50,82 @@ public class UploadClipService : IUploadClipService
 
         var pathUrl = uploadResult.SecureUrl.AbsoluteUri;
 
-        var movieIdentified = new List<UploadedClip>();
+        var clipId = await Nanoid.Nanoid.GenerateAsync(Idcharacters, size);
+
+        var listMovieEntity = new List<MovieIdentified>();
+
+        var listUploadedClip = new List<UploadedClip>();
 
         foreach (var movie in MovieIdentifieds)
         {
-            var uploadedClip = new UploadedClip
+
+            var movieEntityPayload = new MovieIdentifiedPayload
             {
-
-                Id = await Nanoid.Nanoid.GenerateAsync(Idcharacters, size),
-                FileName = ClipFile.FileName,
-                FileSize = ClipFile.Length,
-                FileType = ClipFile.ContentType,
-                CloudinaryFileName = uploadResult.DisplayName,
-                CloudinaryFilePath = pathUrl,
-                CloudinaryFileType = uploadResult.Format,
-                CloudinaryFileSize = uploadResult.Bytes.ToString(),
-                CloudinaryPublicId = uploadResult.PublicId,
-                CreatedAt = DateTime.UtcNow,
-                MovieIdentifiedId = movie.MovieIdentifiedId,
-
+                ImdbId = movie.ImdbId,
+                Title = movie.Title,
+                Year = movie.Year,
+                Released = movie.Released,
+                Runtime = movie.Runtime,
+                Genre = movie.Genre,
+                Director = movie.Director,
+                Actors = movie.Actors,
+                Plot = movie.Plot,
+                Language = movie.Language,
+                Country = movie.Country,
+                Poster = movie.Poster,
+                imdbRating = movie.imdbRating,
+                Type = movie.Type,
+                Confidence = movie.Confidence,
             };
 
-            
-            await _uploadedClipRepository.InsertUploadedClipAsync(uploadedClip);
+            var movieEntity = new MovieIdentified
+            {
+                Id = movie.MovieIdentifiedId,
+                UploadedClipId = clipId,
+                Payload = JsonSerializer.Serialize(movieEntityPayload)
+            };
 
-            movieIdentified.Add(uploadedClip);
+            listMovieEntity.Add(movieEntity);
+
         }
 
-        return movieIdentified;
+        var movieEntityPayloadSerialized = JsonSerializer.Serialize<List<MovieIdentified>>(listMovieEntity);
+
+        var movieIdList = MovieIdentifieds.Select(i => i.MovieIdentifiedId).ToList();
+
+        var newListMovieEntity = new MovieIdentified
+        {
+            Id = movieIdList[0],
+            UploadedClipId = clipId,
+            Payload = movieEntityPayloadSerialized
+        };
+
+        await _movieIdentifiedRepository.InsertMovieIdentifiedAsync(newListMovieEntity);
+
+
+        var uploadedClip = new UploadedClip
+        {
+
+            Id = clipId,
+            FileName = ClipFile.FileName,
+            FileSize = ClipFile.Length,
+            FileType = ClipFile.ContentType,
+            CloudinaryFileName = uploadResult.DisplayName,
+            CloudinaryFilePath = pathUrl,
+            CloudinaryFileType = uploadResult.Format,
+            CloudinaryFileSize = uploadResult.Bytes.ToString(),
+            CloudinaryPublicId = uploadResult.PublicId,
+            CreatedAt = DateTime.UtcNow,
+            MovieIdentifiedId = movieIdList[0],
+
+        };
+
+
+        await _uploadedClipRepository.InsertUploadedClipAsync(uploadedClip);
+
+        return uploadedClip;
     }
+
+        
 }
+
