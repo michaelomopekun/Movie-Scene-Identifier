@@ -42,7 +42,7 @@ public class MovieIdentifiedRepository : IMovieIdentifiedRepository
         return allMoviesIdentified;
     }
 
-    public async Task<IEnumerable<MovieIdentified?>> GetMovieIdentifiedByFileNameAsync(string filename, int top_k = 1)
+    public async Task<MovieIdentified?> GetMovieIdentifiedByFileNameAsync(string filename, int top_k = 1)
     {
 
         var uploadedClip = await _context.UploadedClips
@@ -51,9 +51,8 @@ public class MovieIdentifiedRepository : IMovieIdentifiedRepository
 
         var movieIdentified = await _context.MoviesIdentified
             .AsNoTracking()
-            .Where(m => m.Id == uploadedClip.MovieIdentifiedId)
-            .Take(top_k)
-            .ToListAsync();
+            .Where(m => m.Top_K <= top_k && m.UploadedClipId == uploadedClip.Id)
+            .FirstOrDefaultAsync();
 
         return movieIdentified;
     }
@@ -84,7 +83,7 @@ public class MovieIdentifiedRepository : IMovieIdentifiedRepository
         return existingMovie;
     }
     
-    public async Task<int?> GetMovieIdentifiedCountByFileNameAsync(string filename)
+    public async Task<int?> GetMovieIdentifiedCountByFileNameAsync(string filename, int top_k)
     {
         var uploaded_clips = await _context.UploadedClips
             .AsNoTracking()
@@ -99,9 +98,11 @@ public class MovieIdentifiedRepository : IMovieIdentifiedRepository
 
         var movieIdentifiedCount = await _context.MoviesIdentified
             .AsNoTracking()
-            .Where(m => m.Id == movieIdentified)
-            .CountAsync();
+            .Where(m => m.UploadedClipId == uploaded_clips.Id)
+            .FirstOrDefaultAsync();
 
-        return movieIdentifiedCount;
+        var count = movieIdentifiedCount?.Top_K;
+
+        return count;
     }
 }

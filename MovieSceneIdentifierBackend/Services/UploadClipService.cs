@@ -36,7 +36,7 @@ public class UploadClipService : IUploadClipService
     //     throw new NotImplementedException();
     // }
 
-    public async Task<UploadedClip> UploadClipAsync(IFormFile ClipFile, IEnumerable<MoviePredictionResult> MovieIdentifieds)
+    public async Task<UploadedClip> UploadClipAsync(IFormFile ClipFile, IEnumerable<MoviePredictionResult> MovieIdentifieds, int Top_K)
     {
         await using var stream = ClipFile.OpenReadStream();
 
@@ -97,6 +97,7 @@ public class UploadClipService : IUploadClipService
         {
             Id = movieIdList[0],
             UploadedClipId = clipId,
+            Top_K = Top_K,
             Payload = movieEntityPayloadSerialized
         };
 

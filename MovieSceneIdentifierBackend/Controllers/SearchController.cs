@@ -45,7 +45,7 @@ public class SearchController : ControllerBase
         // check if filename exist before calling Search endpoint
         var clipExists = await _uploadClipService.GetClipByFileNameAsync(VideoClip.FileName);
 
-        var matchedMoviesCount = await _sceneIdentifierService.GetMoviesIdentifiedCountAsync(VideoClip.FileName) ?? 0;
+        var matchedMoviesCount = await _sceneIdentifierService.GetMoviesIdentifiedCountAsync(VideoClip.FileName, Top_K) ?? 0;
 
         if (clipExists != null &&  matchedMoviesCount>=Top_K )
         {
@@ -71,7 +71,7 @@ public class SearchController : ControllerBase
 
         if (clipExists == null)
         {
-            var Clip = await _uploadClipService.UploadClipAsync(VideoClip, searchResult);
+            var Clip = await _uploadClipService.UploadClipAsync(VideoClip, searchResult, Top_K);
 
             if (Clip == null)
             {

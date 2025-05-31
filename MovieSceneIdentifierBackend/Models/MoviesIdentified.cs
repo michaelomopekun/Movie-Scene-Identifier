@@ -3,6 +3,7 @@ public class MovieIdentified
 
     public string Id { get; set; } = string.Empty;
     public string Payload { get; set; } = string.Empty;
+    public int Top_K { get; set; }
     public string UploadedClipId { get; set; } = string.Empty;
     public ICollection<UploadedClip> UploadedClips { get; set; } = new List<UploadedClip>();
 

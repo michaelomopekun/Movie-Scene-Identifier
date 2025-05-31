@@ -5,5 +5,5 @@ public interface ISceneIdentifierService
     Task<string> FetchMovieDetailsFromOMDB(string imdbId);
     Task<MovieIdentified> InsertMovieIdentifiedAsync(IEnumerable<MoviePredictionResult> movieIdentified, string moviePredictedId, string uploadedClipId);
     Task<IEnumerable<MoviePredictionResult>?> GetMovieIdentifiedByFileNameAsync(string filename, int topK = 1);
-    Task<int?> GetMoviesIdentifiedCountAsync(string filename);
+    Task<int?> GetMoviesIdentifiedCountAsync(string filename, int topK);
 }

@@ -147,8 +147,6 @@ public class SceneIdentifierService : ISceneIdentifierService
 
 
     
-
-
     public async Task<string> FetchMovieDetailsFromOMDB(string imdbId)
     {
         try
@@ -222,9 +220,16 @@ public class SceneIdentifierService : ISceneIdentifierService
             return null;
         }
 
+        var deserializedMovieIdentified = JsonSerializer.Deserialize<List<MovieIdentified>>(movieIdentified.Payload);
+        if (deserializedMovieIdentified == null || deserializedMovieIdentified.Count == 0)
+        {
+            _logger.LogWarning("No movie details found in the payload for filename: {Filename}", filename);
+            return null;
+        }
+
         var movies = new List<MoviePredictionResult>();
 
-        foreach (var movie in movieIdentified)
+        foreach (var movie in deserializedMovieIdentified)
         {
             if (!string.IsNullOrEmpty(movie.Payload))
             {
@@ -254,13 +259,19 @@ public class SceneIdentifierService : ISceneIdentifierService
                 movies.Add(moviePredictionResult);
             }
         }
-            _logger.LogInformation("Retrieved movie identified for filename: {Filename}", filename);
 
-        return movies;
+        var topKMovies = movies.OrderByDescending(m => m.Confidence).Take(topK).ToList();
+        if (topKMovies.Count == 0)
+        {
+            _logger.LogInformation("No movies found for filename: {Filename}", filename);
+            return movies;
+        }
+
+        return topKMovies;
     }
 
-    public Task<int?> GetMoviesIdentifiedCountAsync(string filename)
+    public Task<int?> GetMoviesIdentifiedCountAsync(string filename, int top_k)
     {
-        return _movieIdentifiedRepository.GetMovieIdentifiedCountByFileNameAsync(filename);
+        return _movieIdentifiedRepository.GetMovieIdentifiedCountByFileNameAsync(filename, top_k);
     }
 }
