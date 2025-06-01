@@ -49,7 +49,12 @@ public class SceneIdentifierService : ISceneIdentifierService
         {
             var response = await _httpClient.PostAsync(MovieMatchServiceURL, content);
 
-            response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogError("Python service returned {StatusCode}: {Content}", response.StatusCode, await response.Content.ReadAsStringAsync());
+
+            throw new HttpRequestException($"Python service returned status code: {response.StatusCode}, the service may be down at the moment");
+        }
 
             var json = await response.Content.ReadAsStringAsync();
 
@@ -80,21 +85,21 @@ public class SceneIdentifierService : ISceneIdentifierService
         }
 
         try
-            {
-                var predictions = JsonSerializer.Deserialize<List<PythonServiceResponse>>(matchedResultPayload) ?? new();
+        {
+            var predictions = JsonSerializer.Deserialize<List<PythonServiceResponse>>(matchedResultPayload) ?? new();
 
-                var movieIds = predictions.Select(p => p.id).ToList();
+            var movieIds = predictions.Select(p => p.id).ToList();
 
-                if (movieIds.Count == 0)
-                    return Enumerable.Empty<MoviePredictionResult>();
+            if (movieIds.Count == 0)
+                return Enumerable.Empty<MoviePredictionResult>();
 
-                var fetchTasks = movieIds.Select(id => FetchMovieDetailsFromOMDB(id)).ToList();
+            var fetchTasks = movieIds.Select(id => FetchMovieDetailsFromOMDB(id)).ToList();
 
-                await Task.WhenAll(fetchTasks);
+            await Task.WhenAll(fetchTasks);
 
-                var movieIdentifiedId = Nanoid.Nanoid.Generate(Idcharacters, size);
+            var movieIdentifiedId = Nanoid.Nanoid.Generate(Idcharacters, size);
 
-                var results = new List<MoviePredictionResult>();
+            var results = new List<MoviePredictionResult>();
 
 
             for (int i = 0; i < movieIds.Count; i++)
@@ -132,21 +137,21 @@ public class SceneIdentifierService : ISceneIdentifierService
                 // _logger.LogInformation("Inserted movie identified with ID: {Id} for IMDB ID: {ImdbId}", inserted.Id, imdbId);
             }
 
-                return results;
+            return results;
 
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to parse matched result omdb payload");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to parse matched result omdb payload");
 
-                throw;
-            }
+            throw;
+        }
 
         throw new NotImplementedException();
     }
 
 
-    
+
     public async Task<string> FetchMovieDetailsFromOMDB(string imdbId)
     {
         try
@@ -167,6 +172,7 @@ public class SceneIdentifierService : ISceneIdentifierService
             return string.Empty;
         }
     }
+
 
     public async Task<MovieIdentified> InsertMovieIdentifiedAsync(IEnumerable<MoviePredictionResult> MovieInfo, string moviePredictedId, string uploadedClipId)
     {
@@ -207,9 +213,10 @@ public class SceneIdentifierService : ISceneIdentifierService
         };
 
         await _movieIdentifiedRepository.InsertMovieIdentifiedAsync(movieSearchResults);
-        
+
         return movieSearchResults;
     }
+
 
     public async Task<IEnumerable<MoviePredictionResult>?> GetMovieIdentifiedByFileNameAsync(string filename, int topK = 1)
     {
@@ -270,8 +277,13 @@ public class SceneIdentifierService : ISceneIdentifierService
         return topKMovies;
     }
 
-    public Task<int?> GetMoviesIdentifiedCountAsync(string filename, int top_k)
+    public Task<MovieIdentified?> GetMoviesIdentifiedCountAsync(string filename, int top_k)
     {
         return _movieIdentifiedRepository.GetMovieIdentifiedCountByFileNameAsync(filename, top_k);
+    }
+    
+    public Task<bool> DeleteMovieIdentifiedAsync(string movieIdentifiedId)
+    {
+        return _movieIdentifiedRepository.DeleteMovieIdentifiedAsync(movieIdentifiedId);
     }
 }

@@ -11,21 +11,22 @@ public class MovieIdentifiedRepository : IMovieIdentifiedRepository
         _context = context;
     }
 
-    // public async Task<bool> DeleteMovieIdentifiedAsync(string id)
-    // {
-    //     var movieIdentified = await GetMovieIdentifiedByIdAsync(id);
+    public async Task<bool> DeleteMovieIdentifiedAsync(string id)
+    {
+        var movieIdentified = await _context.MoviesIdentified
+            .FirstOrDefaultAsync(m => m.Id == id);
 
-    //     if (movieIdentified == null)
-    //     {
-    //         return false; // Movie not found
-    //     }
+        if (movieIdentified == null)
+        {
+            return false;
+        }
 
-    //     _context.MoviesIdentified.Remove(movieIdentified);
+        _context.MoviesIdentified.Remove(movieIdentified);
 
-    //     await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync();
 
-    //     return true;
-    // }
+        return true;
+    }
 
     public async Task<IEnumerable<MovieIdentified>> GetAllMoviesIdentifiedAsync(int pageSize = 100, int pageNumber = 1)
     {
@@ -51,7 +52,7 @@ public class MovieIdentifiedRepository : IMovieIdentifiedRepository
 
         var movieIdentified = await _context.MoviesIdentified
             .AsNoTracking()
-            .Where(m => m.Top_K <= top_k && m.UploadedClipId == uploadedClip.Id)
+            .Where(m => m.Top_K >= top_k && m.UploadedClipId == uploadedClip.Id)
             .FirstOrDefaultAsync();
 
         return movieIdentified;
@@ -82,8 +83,8 @@ public class MovieIdentifiedRepository : IMovieIdentifiedRepository
 
         return existingMovie;
     }
-    
-    public async Task<int?> GetMovieIdentifiedCountByFileNameAsync(string filename, int top_k)
+
+    public async Task<MovieIdentified?> GetMovieIdentifiedCountByFileNameAsync(string filename, int top_k)
     {
         var uploaded_clips = await _context.UploadedClips
             .AsNoTracking()
@@ -101,8 +102,8 @@ public class MovieIdentifiedRepository : IMovieIdentifiedRepository
             .Where(m => m.UploadedClipId == uploaded_clips.Id)
             .FirstOrDefaultAsync();
 
-        var count = movieIdentifiedCount?.Top_K;
+        // var count = movieIdentifiedCount?.Top_K;
 
-        return count;
+        return movieIdentifiedCount;
     }
 }
