@@ -11,7 +11,7 @@ public class SceneIdentifierService : ISceneIdentifierService
     private readonly IUploadedClipRepository _uploadedClipRepository;
     private const int size = 12;
     private const string Idcharacters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-/<>=!@#$%&/()[]{}|";
-    private string MovieMatchServiceURL = "http://127.0.0.1:5000/search";
+    private string MovieMatchServiceURL = Environment.GetEnvironmentVariable("MovieSearchURL") ?? throw new InvalidOperationException("MovieSearchURL environment variable is not set.");
     private string OMDB_URL = "http://www.omdbapi.com/?apikey={OMDB_APIKEY}&i={imdb_Id}&plot=full";
 
 
