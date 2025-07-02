@@ -123,13 +123,23 @@ public class SearchController : ControllerBase
     [Route("GetMoviewithYoutubeVideoLink")]
     public async Task<IActionResult> GetMovieWithYoutubeVideoLink([FromBody] YoutubeVideoRequest request)
     {
+        var downloadedVideoPath = string.Empty;
+
         try
         {
             var youtubeUrl = request.VideoUrl;
 
-            var downloadedVideoPath = await _fetchVideoWithYoutubeURL.DownloadVideoWithYoutubeURL(youtubeUrl);
+            downloadedVideoPath = await _fetchVideoWithYoutubeURL.DownloadVideoWithYoutubeURL(youtubeUrl);
 
-            var VideoClip = new FormFile(new FileStream(downloadedVideoPath, FileMode.Open), 0, new FileInfo(downloadedVideoPath).Length, "file", Path.GetFileName(downloadedVideoPath));
+            if (!System.IO.File.Exists(downloadedVideoPath))
+            {
+                _logger.LogError("Downloaded video not found at path: {Path}", downloadedVideoPath);
+                return StatusCode(500, new { StatusCode = 99, Status = "Error", Error = "Failed to download video from YouTube" });
+            }
+
+            using var stream = new FileStream(downloadedVideoPath, FileMode.Open, FileAccess.Read);
+            var VideoClip = new FormFile(stream, 0, stream.Length, "file", Path.GetFileName(downloadedVideoPath));
+
             var Top_K = request.Top_K;
 
             _logger.LogInformation("Video clip: {VideoClip}, Top_K: {Top_K}", VideoClip, Top_K);
@@ -211,7 +221,16 @@ public class SearchController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "An error occurred while searching for movies");
-            return StatusCode(500, new { StatusCode = 99, Status = "Error", Error = "An error occurred while searching for movies" }); 
+            return StatusCode(500, new { StatusCode = 99, Status = "Error", Error = "An error occurred while searching for movies" });
+        }
+        finally
+        {
+            // Clean up the downloaded video file
+            if (System.IO.File.Exists(downloadedVideoPath))
+            {
+                System.IO.File.Delete(downloadedVideoPath);
+            }
+            _logger.LogInformation("🧹 Deleted temp video: {Path}", downloadedVideoPath);
         }
         
     }
