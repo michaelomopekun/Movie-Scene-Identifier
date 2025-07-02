@@ -178,7 +178,6 @@ public class SceneIdentifierService : ISceneIdentifierService
     {
         var listMovieInfo = new List<MovieIdentifiedPayload>();
 
-
         foreach (var movieInfo in MovieInfo)
         {
             var moviePayload = new MovieIdentifiedPayload
@@ -198,7 +197,6 @@ public class SceneIdentifierService : ISceneIdentifierService
                 Type = movieInfo.Type,
                 Runtime = movieInfo.Runtime,
                 Year = movieInfo.Year
-
             };
 
             listMovieInfo.Add(moviePayload);

@@ -2,10 +2,15 @@ using CloudinaryDotNet;
 using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using MovieSceneIdentifierBackend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-Env.Load();
+Env.Load(Path.Combine(Directory.GetCurrentDirectory(), ".env"));
+
+var cloudName = Environment.GetEnvironmentVariable("CLOUDNAME");
+
+Console.WriteLine("============⌚⌚⌚⌚⌚CloudName: " + cloudName + "============");
 
 
 // Add services to the container.
@@ -53,11 +58,12 @@ builder.Services.AddScoped<ISceneIdentifierService, SceneIdentifierService>();
 builder.Services.AddScoped<IUploadClipService, UploadClipService>();
 builder.Services.AddScoped<IUploadedClipRepository, UploadedClipRepository>();
 builder.Services.AddScoped<IMovieIdentifiedRepository, MovieIdentifiedRepository>();
+builder.Services.AddScoped<IFetchVideoWithYoutubeURL, FetchVideoWithYoutubeURL>();
 
 
 builder.Services.AddHttpClient<ISceneIdentifierService, SceneIdentifierService>(client =>
 {
-    client.BaseAddress = new Uri("http://127.0.0.1:5000/");
+    client.BaseAddress = new Uri("http://127.0.0.1:8010/");
 });
 
 

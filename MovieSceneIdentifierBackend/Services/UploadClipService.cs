@@ -86,7 +86,6 @@ public class UploadClipService : IUploadClipService
             };
 
             listMovieEntity.Add(movieEntity);
-
         }
 
         var movieEntityPayloadSerialized = JsonSerializer.Serialize<List<MovieIdentified>>(listMovieEntity);
