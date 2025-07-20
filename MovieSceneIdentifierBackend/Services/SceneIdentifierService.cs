@@ -39,7 +39,9 @@ public class SceneIdentifierService : ISceneIdentifierService
 
         var streamContent = new StreamContent(memoryStream);
 
-        streamContent.Headers.ContentType = new MediaTypeHeaderValue(ClipFile.ContentType);
+        var contentType = string.IsNullOrEmpty(ClipFile.ContentType)  ? "video/mp4" : ClipFile.ContentType;
+
+        streamContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
 
         content.Add(streamContent, "file", ClipFile.FileName);
 

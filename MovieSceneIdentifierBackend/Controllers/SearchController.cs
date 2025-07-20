@@ -138,7 +138,11 @@ public class SearchController : ControllerBase
             }
 
             using var stream = new FileStream(downloadedVideoPath, FileMode.Open, FileAccess.Read);
-            var VideoClip = new FormFile(stream, 0, stream.Length, "file", Path.GetFileName(downloadedVideoPath));
+            var VideoClip = new FormFile(stream, 0, stream.Length, "file", Path.GetFileName(downloadedVideoPath))
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = "video/mp4"
+            };
 
             var Top_K = request.Top_K;
 

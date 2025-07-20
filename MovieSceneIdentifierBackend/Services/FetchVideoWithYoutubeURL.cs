@@ -51,6 +51,11 @@ public class FetchVideoWithYoutubeURL : IFetchVideoWithYoutubeURL
             return uri.Segments.Last();
         }
 
+        if (uri.AbsolutePath.StartsWith("/shorts/"))
+        {
+            return uri.Segments.Last().Trim('/');
+        }
+
         var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
 
         return query["v"] ?? throw new ArgumentException("Invalid YouTube URL: Video ID not found.");
