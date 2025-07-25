@@ -1,5 +1,6 @@
 
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace MovieSceneIdentifierBackend.Services;
 
@@ -20,7 +21,7 @@ public class FetchVideoWithYoutubeURL : IFetchVideoWithYoutubeURL
 
             var psi = new ProcessStartInfo
             {
-                FileName = "yt-dlp",
+                FileName = Environment.GetEnvironmentVariable("YTDLP_PATH") ?? "yt-dlp",
                 Arguments = $"-f \"bestvideo[height<=360][ext=mp4]\" -o \"{outputPath}\" \"{youtubeUrl}\"",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,

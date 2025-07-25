@@ -66,6 +66,17 @@ builder.Services.AddHttpClient<ISceneIdentifierService, SceneIdentifierService>(
     client.BaseAddress = new Uri("http://127.0.0.1:8010/");
 });
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowLocalHost",
+        builder =>
+        {
+            builder.WithOrigins("http://127.0.0.1:8080")
+                   .AllowAnyHeader()
+                   .AllowAnyMethod();
+        });
+});
+
 
 var app = builder.Build();
 

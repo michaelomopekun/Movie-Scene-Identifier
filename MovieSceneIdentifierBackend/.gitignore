@@ -38,6 +38,7 @@ npm-debug.log*
 env/
 venv/
 .env/
+publish/
 
 # Dependencies
 node_modules/
