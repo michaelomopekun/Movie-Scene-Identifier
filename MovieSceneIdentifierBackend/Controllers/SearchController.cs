@@ -26,6 +26,7 @@ public class SearchController : ControllerBase
 
     [HttpPost]
     [Route("GetMovieWithSceneClip")]
+    [RequestSizeLimit(30 * 1024 * 1024)]
     public async Task<IActionResult> SearchMovie([FromForm] UploadMovieRequest request)
     {
         try

@@ -1,5 +1,6 @@
 using CloudinaryDotNet;
 using DotNetEnv;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using MovieSceneIdentifierBackend.Services;
@@ -60,6 +61,11 @@ builder.Services.AddScoped<IUploadedClipRepository, UploadedClipRepository>();
 builder.Services.AddScoped<IMovieIdentifiedRepository, MovieIdentifiedRepository>();
 builder.Services.AddScoped<IFetchVideoWithYoutubeURL, FetchVideoWithYoutubeURL>();
 
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 30 * 1024 * 1024;
+});
+
 
 builder.Services.AddHttpClient<ISceneIdentifierService, SceneIdentifierService>(client =>
 {
@@ -68,10 +74,10 @@ builder.Services.AddHttpClient<ISceneIdentifierService, SceneIdentifierService>(
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowLocalHost",
+    options.AddPolicy("AllowFrontend",
         builder =>
         {
-            builder.WithOrigins("http://127.0.0.1:8080")
+            builder.WithOrigins("http://127.0.0.1:8080", "http://127.0.0.1:3000")
                    .AllowAnyHeader()
                    .AllowAnyMethod();
         });
@@ -79,6 +85,9 @@ builder.Services.AddCors(options =>
 
 
 var app = builder.Build();
+
+app.UseCors("AllowFrontend");
+Console.WriteLine("===> Using CORS Policy: AllowFrontend");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -88,6 +97,8 @@ if (app.Environment.IsDevelopment())
 }
 
 // app.UseHttpsRedirection();
+
+// app.UseCors("AllowFrontend");
 
 app.UseAuthorization();
 
